@@ -3,10 +3,12 @@ package weak
 import (
 	"sync"
 	"unsafe"
+
+	weakext "github.com/KarpelesLab/weak"
 )
 
 type valueRef[Key any, Value any] struct {
-	*Ref[Key]
+	*weakext.Ref[Key]
 	value *Value
 }
 
@@ -31,6 +33,10 @@ func (w *Table[Key, Value]) value(key uintptr) *Value {
 // Get returns the value for a given weak reference pointer
 func (w *Table[Key, Value]) Get(key *Key) *Value {
 	w.initTable()
+	if key == nil {
+		return nil
+	}
+
 	ref := w.getRef(key)
 	return w.value(ref)
 }
@@ -47,15 +53,15 @@ func (w *Table[Key, Value]) GetOrCreate(key *Key, factory func(key *Key) *Value)
 		return value
 	}
 
-	keyRef := NewRefDestroyer(key, func(key *Key, wr *Ref[Key]) {
-		w.deleteKey(wr.hidden)
+	keyRef := weakext.NewRefDestroyer(key, func(key *Key, wr *weakext.Ref[Key]) {
+		w.deleteKey(w.getRef(key))
 	})
-	if keyRef.hidden == 0 {
+	if keyRef.Get() == nil {
 		return nil
 	}
 
 	value = factory(key)
-	w.table[keyRef.hidden] = valueRef[Key, Value]{
+	w.table[w.getRef(key)] = valueRef[Key, Value]{
 		Ref:   keyRef,
 		value: value,
 	}

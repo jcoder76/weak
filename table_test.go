@@ -15,16 +15,42 @@ type TestObj2 struct {
 	value string
 }
 
-type WeakTableTestSuite struct {
+type TableTestSuite struct {
 	suite.Suite
 	table *weak.Table[TestObj1, TestObj2]
 }
 
-func (s *WeakTableTestSuite) SetupTest() {
+func (s *TableTestSuite) SetupTest() {
 	s.table = &weak.Table[TestObj1, TestObj2]{}
 }
 
-func (s *WeakTableTestSuite) TestCanGetNewObjectfromTable() {
+func (s *TableTestSuite) TestGeWithNilKeyReturnsNil() {
+	var obj1 *TestObj1 = nil
+
+	result := s.table.Get(obj1)
+
+	s.Nil(result)
+}
+
+func (s *TableTestSuite) TestGetOrCreateWithNilKeyReturnsNil() {
+	var obj1 *TestObj1 = nil
+
+	result := s.table.GetOrCreate(obj1, func(key *TestObj1) *TestObj2 {
+		return &TestObj2{}
+	})
+
+	s.Nil(result)
+}
+
+func (s *TableTestSuite) TestGetWithUnkownKeyReturnsNil() {
+	obj1 := &TestObj1{}
+
+	result := s.table.Get(obj1)
+
+	s.Nil(result)
+}
+
+func (s *TableTestSuite) TestCanGetNewObjectfromTable() {
 	obj1, expect := s.setupValues()
 
 	result := s.table.Get(obj1)
@@ -32,7 +58,7 @@ func (s *WeakTableTestSuite) TestCanGetNewObjectfromTable() {
 	s.Equal(expect, result)
 }
 
-func (s *WeakTableTestSuite) TestCanGetDeleteObjectfromTable() {
+func (s *TableTestSuite) TestCanGetDeleteObjectfromTable() {
 	obj1, _ := s.setupValues()
 
 	s.table.Delete(obj1)
@@ -42,7 +68,7 @@ func (s *WeakTableTestSuite) TestCanGetDeleteObjectfromTable() {
 }
 
 // TODO: Doesn't work as expected, this test fails
-// func (s *WeakTableTestSuite) TestGCDeletesObjectfromTable() {
+// func (s *TableTestSuite) TestGCDeletesObjectfromTable() {
 // 	s.setupValues()
 
 // 	// Force GC cycle
@@ -52,7 +78,7 @@ func (s *WeakTableTestSuite) TestCanGetDeleteObjectfromTable() {
 // 	s.Zero(size)
 // }
 
-func (s *WeakTableTestSuite) setupValues() (*TestObj1, *TestObj2) {
+func (s *TableTestSuite) setupValues() (*TestObj1, *TestObj2) {
 	obj1 := &TestObj1{
 		value: 1337,
 	}
@@ -66,6 +92,6 @@ func (s *WeakTableTestSuite) setupValues() (*TestObj1, *TestObj2) {
 	return obj1, expect
 }
 
-func TestWeakTableTestSuite(t *testing.T) {
-	suite.Run(t, new(WeakTableTestSuite))
+func TestTableTestSuite(t *testing.T) {
+	suite.Run(t, new(TableTestSuite))
 }
